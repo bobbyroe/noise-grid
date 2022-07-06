@@ -21,7 +21,7 @@ const colors = [];
 let col;
 const planeGeo = new THREE.PlaneGeometry(2, 2, 30, 30);
 const planeMat = new THREE.MeshBasicMaterial({
-  vertexColors: true
+  vertexColors: true,
 });
 const plane = new THREE.Mesh(planeGeo, planeMat);
 
@@ -52,19 +52,26 @@ function updatePoints(t) {
 
   let positions = planeGeo.attributes.position.array;
   let len = positions.length;
-  let noiseMagnitude = 0.5;
+  let noiseMagnitude = 0.3;
   let noiseFrequency = 2;
   for (let i = 0; i < len; i += 1) {
     // randomize the *z* position only
     if (i % 3 === 2) {
-      ns = Noise.noise(positions[i - 2] * noiseFrequency, positions[i - 1] * noiseFrequency, t);
+      ns = Noise.noise(
+        positions[i - 2] * noiseFrequency,
+        positions[i - 1] * noiseFrequency,
+        t
+      );
       positions[i] = ns * noiseMagnitude;
       col = new THREE.Color().lerpColors(lowColor, highColor, ns);
       coords.push(positions[i - 2], positions[i - 1], positions[i]);
       colors.push(col.r, col.g, col.b);
     }
   }
-  planeGeo.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
+  planeGeo.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(coords, 3)
+  );
   planeGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 }
 
