@@ -6,7 +6,7 @@ const w = window.innerWidth;
 const h = window.innerHeight;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
-camera.position.z = 10;
+camera.position.z = 2;
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(w, h);
 document.body.appendChild(renderer.domElement);
@@ -16,80 +16,65 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
 controls.update();
 
-// initialize points
-const gridSize = 32;
-const gap = 0.16;
-const coords = [];
+// okabe
 const colors = [];
-const points = [];
-let x;
-let y;
-let z = 0;
-let r;
-let g;
-let b;
-let point = {
-  position: {},
-  rate: 0.0,
-};
-for (let i = -gridSize; i < gridSize; i += 1) {
-  for (let j = -gridSize; j < gridSize; j += 1) {
-    x = i * gap;
-    y = j * gap;
-    r = Math.random();
-    g = Math.random();
-    b = Math.random();
-    point = {
-      position: {
-        x,
-        y,
-        z,
-      },
-      color: new THREE.Color(r, g, b),
-    };
+let col;
+const planeGeo = new THREE.PlaneGeometry(2, 2, 30, 30);
+const planeMat = new THREE.MeshBasicMaterial({
+  vertexColors: true
+});
+const plane = new THREE.Mesh(planeGeo, planeMat);
 
-    points.push(point);
-    coords.push(x, y, z);
-    colors.push(r, g, b);
+let positions = planeGeo.attributes.position.array;
+let len = positions.length;
+for (let i = 0; i < len; i += 1) {
+  // randomize the *z* position only
+  if (i % 3 === 2) {
+    positions[i] += Math.random() * 0.2;
+    col = new THREE.Color(
+      positions[i] * 4,
+      positions[i] * 4,
+      positions[i] * 12
+    );
+    colors.push(col.r, col.g, col.b);
   }
 }
+scene.add(plane);
 
-// points
-const geo = new THREE.BufferGeometry();
-geo.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
-geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-const mat = new THREE.PointsMaterial({ size: 0.31, vertexColors: true });
-const pointsObj = new THREE.Points(geo, mat);
 const Noise = new ImprovedNoise();
-
 function updatePoints(t) {
-  const coords = [];
-  const cols = [];
   let ns;
-  const nScale = 0.5;
-  const zPosScale = 1.5;
-  const lowColor = new THREE.Color(0.0, 0, 0.8);
+  const coords = [];
+  const colors = [];
+  let col;
+  const lowColor = new THREE.Color(0, 0, 0.8);
   const highColor = new THREE.Color(1.5, 1.5, 1.5);
-  points.forEach((p, i) => {
-    ns = Noise.noise(p.position.x * nScale, p.position.y * nScale, t);
-    p.position.z = ns * zPosScale;
-    p.color.lerpColors(lowColor, highColor, ns * 1.5);
-    let { r, g, b } = p.color;
-    cols.push(r, g, b);
-    let {x, y, z } = p.position;
-    coords.push(x, y, z);
-  });
-  geo.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
-  geo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
-}
-scene.add(pointsObj);
 
-const timeMult = 0.0005;
-function animate(timeStep) {
+  let positions = planeGeo.attributes.position.array;
+  let len = positions.length;
+  let noiseMagnitude = 0.5;
+  let noiseFrequency = 2;
+  for (let i = 0; i < len; i += 1) {
+    // randomize the *z* position only
+    if (i % 3 === 2) {
+      ns = Noise.noise(positions[i - 2] * noiseFrequency, positions[i - 1] * noiseFrequency, t);
+      positions[i] = ns * noiseMagnitude;
+      col = new THREE.Color().lerpColors(lowColor, highColor, ns);
+      coords.push(positions[i - 2], positions[i - 1], positions[i]);
+      colors.push(col.r, col.g, col.b);
+    }
+  }
+  planeGeo.setAttribute("position", new THREE.Float32BufferAttribute(coords, 3));
+  planeGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+}
+
+const timeMult = 0.001;
+function animate(timeStamp) {
   requestAnimationFrame(animate);
-  updatePoints(timeStep * timeMult);
+  updatePoints(timeStamp * timeMult);
   renderer.render(scene, camera);
 }
+
 // START!
 animate(0);
 
