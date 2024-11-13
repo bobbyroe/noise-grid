@@ -99,3 +99,6 @@ function handleWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener("resize", handleWindowResize, false);
+
+// TODO 2024:
+// use instanced geo instead of points
